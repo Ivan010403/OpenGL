@@ -1,23 +1,8 @@
-/*
-	Copyright 2010 Etay Meiri
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
 #ifndef MATH_3D_H
 #define	MATH_3D_H
 
+#include <stdio.h>
 #define _USE_MATH_DEFINES
-
 #include <math.h>
 
 #define ToRadian(x) ((x) * M_PI / 180.0f)
@@ -39,6 +24,15 @@ struct Vector3f
         y = _y;
         z = _z;
     }
+
+    Vector3f Cross(const Vector3f& v) const;
+
+    Vector3f& Normalize();
+
+    void Print() const
+    {
+        printf("(%.02f, %.02f, %.02f", x, y, z);
+    }
 };
 
 class Matrix4f
@@ -47,7 +41,7 @@ public:
     float m[4][4];
 
     Matrix4f()
-    {        
+    {
     }
 
 
@@ -59,21 +53,27 @@ public:
         m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
     }
 
-    inline Matrix4f operator*(const Matrix4f& Right) const //перегруженный оператор умножения для перемножения матриц
+    inline Matrix4f operator*(const Matrix4f& Right) const
     {
         Matrix4f Ret;
 
-        for (unsigned int i = 0 ; i < 4 ; i++) {
-            for (unsigned int j = 0 ; j < 4 ; j++) {
+        for (unsigned int i = 0; i < 4; i++) {
+            for (unsigned int j = 0; j < 4; j++) {
                 Ret.m[i][j] = m[i][0] * Right.m[0][j] +
-                              m[i][1] * Right.m[1][j] +
-                              m[i][2] * Right.m[2][j] +
-                              m[i][3] * Right.m[3][j];
+                    m[i][1] * Right.m[1][j] +
+                    m[i][2] * Right.m[2][j] +
+                    m[i][3] * Right.m[3][j];
             }
         }
 
         return Ret;
     }
+
+    void InitScaleTransform(float ScaleX, float ScaleY, float ScaleZ);
+    void InitRotateTransform(float RotateX, float RotateY, float RotateZ);
+    void InitTranslationTransform(float x, float y, float z);
+    void InitCameraTransform(const Vector3f& Target, const Vector3f& Up);
+    void InitPersProjTransform(float FOV, float Width, float Height, float zNear, float zFar);
 };
 
 

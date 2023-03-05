@@ -12,7 +12,7 @@
 
 GLuint VBO;
 GLuint IBO;
-GLuint gWorldLocation;
+GLuint gWVPLocation;
 
 
 static const char* pVS = "                                                          \n\
@@ -20,13 +20,13 @@ static const char* pVS = "                                                      
                                                                                     \n\
 layout (location = 0) in vec3 Position;                                             \n\
                                                                                     \n\
-uniform mat4 gWorld;                                                                \n\
+uniform mat4 gWVP;                                                                  \n\
                                                                                     \n\
 out vec4 Color;                                                                     \n\
                                                                                     \n\
 void main()                                                                         \n\
 {                                                                                   \n\
-    gl_Position = gWorld * vec4(Position, 1.0);                                     \n\
+    gl_Position = gWVP * vec4(Position, 1.0);                                       \n\
     Color = vec4(clamp(Position, 0.0, 1.0), 1.0);                                   \n\
 }";
 
@@ -52,19 +52,21 @@ static void RenderSceneCB()
 
     Pipeline p;
     p.Rotate(0.0f, Scale, 0.0f);
-    p.WorldPos(0.0f, 0.0f, 5.0f);
-    p.SetPerspectiveProj(30.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 100.0f); //задаЄм параметры конвейера
+    p.WorldPos(0.0f, 0.0f, 3.0f);
+    Vector3f CameraPos(0.0f, 0.0f, -3.0f);
+    Vector3f CameraTarget(0.0f, 0.0f, 2.0f);
+    Vector3f CameraUp(0.0f, 1.0f, 0.0f);
+    p.SetCamera(CameraPos, CameraTarget, CameraUp);
+    p.SetPerspectiveProj(60.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 100.0f);
 
-    glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, (const GLfloat*)p.GetTrans()); //отправка в шейдер вершин (юниформ переменна€)
+    glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetTrans());
 
     glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); //св€зывание с буфером вершин
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO); //св€зывание с буфером индексов
-
-    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0); //индексированна€ отрисовка (по индексам)
+    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(0);
 
@@ -75,7 +77,7 @@ static void RenderSceneCB()
 static void InitializeGlutCallbacks()
 {
     glutDisplayFunc(RenderSceneCB);
-    glutIdleFunc(RenderSceneCB); //ленива€ обратна€ функци€
+    glutIdleFunc(RenderSceneCB);
 }
 
 static void CreateVertexBuffer()
@@ -91,7 +93,7 @@ static void CreateVertexBuffer()
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 }
 
-static void CreateIndexBuffer() // создание буфера индексов
+static void CreateIndexBuffer()
 {
     unsigned int Indices[] = { 0, 3, 1,
                                1, 3, 2,
@@ -105,7 +107,7 @@ static void CreateIndexBuffer() // создание буфера индексов
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
-    GLuint ShaderObj = glCreateShader(ShaderType); // создаЄм шейдер
+    GLuint ShaderObj = glCreateShader(ShaderType);
 
     if (ShaderObj == 0) {
         fprintf(stderr, "Error creating shader type %d\n", ShaderType);
@@ -113,13 +115,13 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
     }
 
     const GLchar* p[1];
-    p[0] = pShaderText; // код программы шейдера
+    p[0] = pShaderText;
     GLint Lengths[1];
-    Lengths[0] = strlen(pShaderText); // длина программы шейдера
-    glShaderSource(ShaderObj, 1, p, Lengths); // св€зывание шейдера и кода с длинной
-    glCompileShader(ShaderObj); // компил€ци€
+    Lengths[0] = strlen(pShaderText);
+    glShaderSource(ShaderObj, 1, p, Lengths);
+    glCompileShader(ShaderObj);
     GLint success;
-    glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success); // проверка статуса компил€ции
+    glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success);
     if (!success) {
         GLchar InfoLog[1024];
         glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
@@ -127,12 +129,12 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
         exit(1);
     }
 
-    glAttachShader(ShaderProgram, ShaderObj); // прикрепление к программе
+    glAttachShader(ShaderProgram, ShaderObj);
 }
 
 static void CompileShaders()
 {
-    GLuint ShaderProgram = glCreateProgram(); // создание программного объекта
+    GLuint ShaderProgram = glCreateProgram();
 
     if (ShaderProgram == 0) {
         fprintf(stderr, "Error creating shader program\n");
@@ -145,15 +147,15 @@ static void CompileShaders()
     GLint Success = 0;
     GLchar ErrorLog[1024] = { 0 };
 
-    glLinkProgram(ShaderProgram); // линкуем шейдеры с программой
-    glGetProgramiv(ShaderProgram, GL_LINK_STATUS, &Success); // проверка на ошибки
+    glLinkProgram(ShaderProgram);
+    glGetProgramiv(ShaderProgram, GL_LINK_STATUS, &Success);
     if (Success == 0) {
         glGetProgramInfoLog(ShaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
         fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
         exit(1);
     }
 
-    glValidateProgram(ShaderProgram); // проверка программы
+    glValidateProgram(ShaderProgram);
     glGetProgramiv(ShaderProgram, GL_VALIDATE_STATUS, &Success);
     if (!Success) {
         glGetProgramInfoLog(ShaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
@@ -161,10 +163,10 @@ static void CompileShaders()
         exit(1);
     }
 
-    glUseProgram(ShaderProgram); // прив€зывание к конвейеру
+    glUseProgram(ShaderProgram);
 
-    gWorldLocation = glGetUniformLocation(ShaderProgram, "gWorld"); //поиск позиции юниформ переменной
-    assert(gWorldLocation != 0xFFFFFFFF);
+    gWVPLocation = glGetUniformLocation(ShaderProgram, "gWVP");
+    assert(gWVPLocation != 0xFFFFFFFF);
 }
 
 int main(int argc, char** argv)
@@ -173,7 +175,7 @@ int main(int argc, char** argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("Tutorial 12");
+    glutCreateWindow("Tutorial 13");
 
     InitializeGlutCallbacks();
 
