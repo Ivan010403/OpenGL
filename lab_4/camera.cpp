@@ -144,12 +144,10 @@ void Camera::Update()
 {
     const Vector3f Vaxis(0.0f, 1.0f, 0.0f);
 
-    // Rotate the view vector by the horizontal angle around the vertical axis
     Vector3f View(1.0f, 0.0f, 0.0f);
     View.Rotate(m_AngleH, Vaxis);
     View.Normalize();
 
-    // Rotate the view vector by the vertical angle around the horizontal axis
     Vector3f Haxis = Vaxis.Cross(View);
     Haxis.Normalize();
     View.Rotate(m_AngleV, Haxis);

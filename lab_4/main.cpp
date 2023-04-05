@@ -1,4 +1,3 @@
-
 #include <math.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -195,9 +194,8 @@ public:
 int main(int argc, char** argv)
 {
     GLUTBackendInit(argc, argv);
-    Magick::InitializeMagick(nullptr); // <--- added this line
-
-    if (!GLUTBackendCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, 32, false, "Normal Map")) {
+    Magick::InitializeMagick(nullptr);
+    if (!GLUTBackendCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, 32, false, "Tutorial 26")) {
         return 1;
     }
 
